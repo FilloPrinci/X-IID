@@ -14,6 +14,7 @@ public class CarController : MonoBehaviour
     public Transform frontCollisionCheck;
     public Rigidbody rb;
     public float groundOffset;
+    public Transform model;
 
 
     private float inputAccellerator = 0;
@@ -24,7 +25,7 @@ public class CarController : MonoBehaviour
     private float currentAccelleration = 0;
     private Vector3 accellerationVector;
     private Vector3 gravityVector;
-    private Vector3 groundRotation;
+    private Vector3 forwardDirection;
 
     // Start is called before the first frame update
     void Start()
@@ -44,16 +45,16 @@ public class CarController : MonoBehaviour
         stickToGound();
         getInputs();
         accellerate();
-        transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles + new Vector3(0f, inputTourn * turnStrenght * 100 * Time.deltaTime, 0f));
+        model.transform.Rotate(0, inputTourn * turnStrenght * 120 * Time.deltaTime, 0);
+        forwardDirection = model.forward.normalized;
         transform.position += gravityVector + accellerationVector;
-        
     }
 
     void accellerate() {
         currentAccelleration = Mathf.Lerp(speed, (maxSpeeed * inputAccellerator * 10), Time.deltaTime * accelleration);
-        accellerationVector = transform.forward * currentAccelleration * Time.deltaTime;
+        accellerationVector = forwardDirection * currentAccelleration * Time.deltaTime;
         Debug.Log("speed: " + speed + " | accelleration: " + currentAccelleration + " | InputAccelleration: " + inputAccellerator);
-        speed = transform.InverseTransformDirection(transform.position - previousPosition).z /Time.deltaTime;
+        speed = model.transform.InverseTransformDirection(transform.position - previousPosition).z /Time.deltaTime;
         previousPosition = transform.position;
     }
 
@@ -62,10 +63,8 @@ public class CarController : MonoBehaviour
         if (Physics.Raycast(transform.position, -transform.up, out hit, Mathf.Infinity))
         {
             Debug.DrawRay(transform.position, -transform.up * hit.distance, Color.yellow);
+            transform.up -= (transform.up - hit.normal) * 0.1f;
             gravityVector = -transform.up * (hit.distance - groundOffset);
-            //gravityVector = Vector3.LerpUnclamped(gravityVector, -transform.up * (hit.distance - groundOffset), Time.deltaTime);
-            
-            groundRotation = Quaternion.FromToRotation(hit.normal, Vector3.up).eulerAngles;
         }
         else {
             gravityVector = Vector3.zero;
